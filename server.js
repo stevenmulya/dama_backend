@@ -19,6 +19,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Multer Configuration
+const storageConfig = multer.memoryStorage();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Fungsi untuk mengunggah MyPortofolio ke Supabase Storage
@@ -97,7 +98,26 @@ async function uploadBlogsToSupabase(file, filePath) {
     }
 }
 
-// --------------------- TAGLINES CRUD ---------------------
+// Function to upload file to Supabase Storage
+async function uploadFileToSupabase(file, filePath) {
+    try {
+        const { error, data } = await storage
+            .from('homebucket') // Use the new bucket name
+            .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+        if (error) {
+            console.error('Supabase Storage Error:', error);
+            return null;
+        }
+
+        return `${supabaseUrl}/storage/v1/object/public/homebucket/${filePath}`; // Use the new bucket name
+    } catch (error) {
+        console.error("Error uploading to Supabase Storage:", error);
+        return null;
+    }
+}
+
+// --------------------- TAGLINE CRUD ---------------------
 
 // Create a tagline (with image upload)
 app.post('/taglines', upload.single('tagline_img'), async (req, res) => {
@@ -107,7 +127,7 @@ app.post('/taglines', upload.single('tagline_img'), async (req, res) => {
         let tagline_img = null;
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            tagline_img = await uploadHomeToSupabase(req.file, filePath, 'homebucket'); // Pastikan 'homebucket' adalah bucket yang benar
+            tagline_img = await uploadFileToSupabase(req.file, filePath);
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
@@ -161,7 +181,7 @@ app.put('/taglines/:id', upload.single('tagline_img'), async (req, res) => {
 
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const tagline_img = await uploadHomeToSupabase(req.file, filePath, 'homebucket'); // Pastikan 'homebucket' adalah bucket yang benar
+            const tagline_img = await uploadFileToSupabase(req.file, filePath);
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
