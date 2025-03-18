@@ -40,6 +40,24 @@ async function uploadHomeToSupabase(file, filePath) {
     }
 }
 
+async function uploadTaglinesToSupabase(file, filePath) {
+    try {
+        const { error, data } = await storage
+            .from('taglinesbucket')
+            .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+        if (error) {
+            console.error('Supabase Storage Error:', error);
+            return null;
+        }
+
+        return `${supabaseUrl}/storage/v1/object/public/taglinesbucket/${filePath}`;
+    } catch (error) {
+        console.error("Error uploading to Supabase Storage:", error);
+        return null;
+    }
+}
+
 // Fungsi untuk mengunggah MyServices ke Supabase Storage
 async function uploadServicesToSupabase(file, filePath) {
     try {
@@ -107,7 +125,7 @@ app.post('/taglines', upload.single('tagline_img'), async (req, res) => {
         let tagline_img = null;
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            tagline_img = await uploadHomeToSupabase(req.file, filePath);
+            tagline_img = await uploadTaglinesToSupabase(req.file, filePath);
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
@@ -161,7 +179,7 @@ app.put('/taglines/:id', upload.single('tagline_img'), async (req, res) => {
 
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const tagline_img = await uploadHomeToSupabase(req.file, filePath);
+            const tagline_img = await uploadTaglinesToSupabase(req.file, filePath);
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
