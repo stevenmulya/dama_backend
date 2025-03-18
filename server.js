@@ -216,6 +216,106 @@ app.delete('/taglines/:id', async (req, res) => {
     res.json({ message: 'Tagline deleted', data });
 });
 
+// --------------------- TOSERVICES CRUD ---------------------
+
+// Create a toservice (with image upload)
+app.post('/toservices', upload.single('toservices_img'), async (req, res) => {
+    try {
+        const { toservices_text } = req.body;
+
+        let toservices_img = null;
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            toservices_img = await uploadFileToSupabase(req.file, filePath);
+            if (!toservices_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('toservices')
+            .insert([{ toservices_img, toservices_text }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all toservices
+app.get('/toservices', async (req, res) => {
+    const { data, error } = await supabase.from('toservices').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single toservice
+app.get('/toservices/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('toservices').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a toservice (with image upload)
+app.put('/toservices/:id', upload.single('toservices_img'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { toservices_text } = req.body;
+
+        let updateData = { toservices_text };
+
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const toservices_img = await uploadFileToSupabase(req.file, filePath);
+            if (!toservices_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+            updateData.toservices_img = toservices_img;
+        }
+
+        const { data, error } = await supabase
+            .from('toservices')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a toservice
+app.delete('/toservices/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('toservices').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'TOService deleted', data });
+});
+
+
 // --------------------- OURCLIENTS CRUD ---------------------
 
 // Create an ourclient (with image upload)
@@ -707,105 +807,6 @@ app.delete('/dama/:id', async (req, res) => {
     }
 
     res.json({ message: 'Dama deleted', data });
-});
-
-// --------------------- TOSERVICES CRUD ---------------------
-
-// Create a toservices
-app.post('/toservices', upload.single('toservices_img'), async (req, res) => {
-    try {
-        const { toservices_text } = req.body;
-
-        let toservices_img = null;
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            toservices_img = await uploadHomeToSupabase(req.file, filePath); // Use servicesbucket
-            if (!toservices_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-        }
-
-        const { data, error } = await supabase
-            .from('toservices') // Menggunakan tabel 'toservices'
-            .insert([{ toservices_img, toservices_text }])
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get all toservices
-app.get('/toservices', async (req, res) => {
-    const { data, error } = await supabase.from('toservices').select('*'); // Menggunakan tabel 'toservices'
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-});
-
-// Get a single toservices
-app.get('/toservices/:id', async (req, res) => {
-    const { id } = req.params;
-    const { data, error } = await supabase.from('toservices').select('*').eq('id', id).single(); // Menggunakan tabel 'toservices'
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-});
-
-// Update a toservices (with image upload)
-app.put('/toservices/:id', upload.single('toservices_img'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { toservices_text } = req.body;
-
-        let updateData = { toservices_text };
-
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const toservices_img = await uploadServicesToSupabase(req.file, filePath); // Use servicesbucket
-            if (!toservices_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-            updateData.toservices_img = toservices_img;
-        }
-
-        const { data, error } = await supabase
-            .from('toservices') // Menggunakan tabel 'toservices'
-            .update(updateData)
-            .eq('id', id)
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete a toservices
-app.delete('/toservices/:id', async (req, res) => {
-    const { id } = req.params;
-    const { data, error } = await supabase.from('toservices').delete().eq('id', id); // Menggunakan tabel 'toservices'
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ message: 'TOServices deleted', data });
 });
 
 // --------------------- TOWORKS CRUD ---------------------
