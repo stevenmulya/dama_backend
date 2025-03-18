@@ -107,7 +107,7 @@ app.post('/taglines', upload.single('tagline_img'), async (req, res) => {
         let tagline_img = null;
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            tagline_img = await uploadHomeToSupabase(req.file, filePath, 'taglines');
+            tagline_img = await uploadFileToSupabase(req.file, filePath, 'homebucket'); // Pastikan 'homebucket' adalah bucket yang benar
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
@@ -161,7 +161,7 @@ app.put('/taglines/:id', upload.single('tagline_img'), async (req, res) => {
 
         if (req.file) {
             const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const tagline_img = await uploadHomeToSupabase(req.file, filePath, 'taglines');
+            const tagline_img = await uploadFileToSupabase(req.file, filePath, 'homebucket'); // Pastikan 'homebucket' adalah bucket yang benar
             if (!tagline_img) {
                 return res.status(500).json({ error: 'Failed to upload image' });
             }
