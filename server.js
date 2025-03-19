@@ -949,6 +949,7 @@ app.delete('/faq/:id', async (req, res) => {
     res.json({ message: 'FAQ entry deleted', data });
 });
 
+
 // --------------------- SERVICES_INDIVIDUAL CRUD ---------------------
 
 // Create a services_individual entry (with image upload)
@@ -956,27 +957,34 @@ app.post('/services_individual', upload.single('services_individual_img'), async
     try {
         const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
 
+        let parsedInclude = [];
+        try{
+            parsedInclude = JSON.parse(services_individual_include);
+        } catch (parseError) {
+            return res.status(400).json({ error: 'Invalid services_individual_include format. Must be a JSON string.' });
+        }
+
         let services_individual_img = null;
         if (req.file) {
             const filePath = `services_individual/${Date.now()}${path.extname(req.file.originalname)}`;
             services_individual_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_individual_img) {
-                return res.status(500).json({ error: 'Failed to upload services individual image' });
+                return res.status(500).json({ error: 'Failed to upload services individual image.' });
             }
         }
 
         const { data, error } = await supabase
             .from('services_individual')
-            .insert([{ services_individual_name, services_individual_title, services_individual_desc, services_individual_include, services_individual_img }])
+            .insert([{ services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude, services_individual_img }])
             .select();
 
         if (error) {
-            return res.status(400).json({ error: error.message });
+            return res.status(400).json({ error: `Failed to create services individual entry: ${error.message}` });
         }
 
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
 });
 
@@ -985,7 +993,7 @@ app.get('/services_individual', async (req, res) => {
     const { data, error } = await supabase.from('services_individual').select('*');
 
     if (error) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: `Failed to fetch services individual entries: ${error.message}` });
     }
 
     res.json(data);
@@ -997,7 +1005,7 @@ app.get('/services_individual/:id', async (req, res) => {
     const { data, error } = await supabase.from('services_individual').select('*').eq('id', id).single();
 
     if (error) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: `Failed to fetch services individual entry: ${error.message}` });
     }
 
     res.json(data);
@@ -1009,13 +1017,20 @@ app.put('/services_individual/:id', upload.single('services_individual_img'), as
         const { id } = req.params;
         const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
 
-        let updateData = { services_individual_name, services_individual_title, services_individual_desc, services_individual_include };
+        let parsedInclude = [];
+        try{
+            parsedInclude = JSON.parse(services_individual_include);
+        } catch (parseError) {
+            return res.status(400).json({ error: 'Invalid services_individual_include format. Must be a JSON string.' });
+        }
+
+        let updateData = { services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude };
 
         if (req.file) {
             const filePath = `services_individual/${Date.now()}${path.extname(req.file.originalname)}`;
             const services_individual_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_individual_img) {
-                return res.status(500).json({ error: 'Failed to upload services individual image' });
+                return res.status(500).json({ error: 'Failed to upload services individual image.' });
             }
             updateData.services_individual_img = services_individual_img;
         }
@@ -1027,12 +1042,12 @@ app.put('/services_individual/:id', upload.single('services_individual_img'), as
             .select();
 
         if (error) {
-            return res.status(400).json({ error: error.message });
+            return res.status(400).json({ error: `Failed to update services individual entry: ${error.message}` });
         }
 
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
 });
 
@@ -1042,7 +1057,7 @@ app.delete('/services_individual/:id', async (req, res) => {
     const { data, error } = await supabase.from('services_individual').delete().eq('id', id);
 
     if (error) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: `Failed to delete services individual entry: ${error.message}` });
     }
 
     res.json({ message: 'Services individual entry deleted', data });
