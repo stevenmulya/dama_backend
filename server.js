@@ -415,6 +415,85 @@ app.delete('/ourclients/:id', async (req, res) => {
     res.json({ message: 'Client logo deleted', data });
 });
 
+// --------------------- TOWORKS CRUD ---------------------
+
+// Create a towork
+app.post('/toworks', async (req, res) => {
+    try {
+        const { toworks_text, toworks_sub_text } = req.body;
+
+        const { data, error } = await supabase
+            .from('toworks')
+            .insert([{ toworks_text, toworks_sub_text }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all toworks
+app.get('/toworks', async (req, res) => {
+    const { data, error } = await supabase.from('toworks').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single towork
+app.get('/toworks/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('toworks').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a towork
+app.put('/toworks/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { toworks_text, toworks_sub_text } = req.body;
+
+        const { data, error } = await supabase
+            .from('toworks')
+            .update({ toworks_text, toworks_sub_text })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a towork
+app.delete('/toworks/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('toworks').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Towork deleted', data });
+});
+
 // --------------------- TESTIMONIALS CRUD ---------------------
 
 // Create a testimonial (with image upload)
@@ -807,85 +886,6 @@ app.delete('/dama/:id', async (req, res) => {
     }
 
     res.json({ message: 'Dama deleted', data });
-});
-
-// --------------------- TOWORKS CRUD ---------------------
-
-// Create a toworks
-app.post('/toworks', async (req, res) => {
-    try {
-        const { toworks_text, toworks_sub_text } = req.body;
-
-        const { data, error } = await supabase
-            .from('toworks')
-            .insert([{ toworks_text, toworks_sub_text }])
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get all toworks
-app.get('/toworks', async (req, res) => {
-    const { data, error } = await supabase.from('toworks').select('*');
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-});
-
-// Get a single toworks
-app.get('/toworks/:id', async (req, res) => {
-    const { id } = req.params;
-    const { data, error } = await supabase.from('toworks').select('*').eq('id', id).single();
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-});
-
-// Update a toworks
-app.put('/toworks/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { toworks_text, toworks_sub_text } = req.body;
-
-        const { data, error } = await supabase
-            .from('toworks')
-            .update({ toworks_text, toworks_sub_text })
-            .eq('id', id)
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete a toworks
-app.delete('/toworks/:id', async (req, res) => {
-    const { id } = req.params;
-    const { data, error } = await supabase.from('toworks').delete().eq('id', id);
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ message: 'TOWorks deleted', data });
 });
 
 // --------------------- SERVICES_INDIVIDUAL CRUD ---------------------
