@@ -951,38 +951,23 @@ app.delete('/faq/:id', async (req, res) => {
 
 // --------------------- SERVICES_INDIVIDUAL CRUD ---------------------
 
-// Create a services_individual
+// Create a services_individual entry (with image upload)
 app.post('/services_individual', upload.single('services_individual_img'), async (req, res) => {
     try {
-        const {
-            services_individual_name,
-            services_individual_title,
-            services_individual_desc,
-            include_1,
-            include_2,
-            include_3,
-        } = req.body;
+        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
 
         let services_individual_img = null;
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            services_individual_img = await uploadServicesToSupabase(req.file, filePath); // Use servicesbucket
+            const filePath = `services_individual/${Date.now()}${path.extname(req.file.originalname)}`;
+            services_individual_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_individual_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload services individual image' });
             }
         }
 
-        const includes = [include_1, include_2, include_3].filter(Boolean); // Filter out empty includes
-
         const { data, error } = await supabase
             .from('services_individual')
-            .insert([{
-                services_individual_img,
-                services_individual_name,
-                services_individual_title,
-                services_individual_desc,
-                services_individual_include: includes,
-            }])
+            .insert([{ services_individual_name, services_individual_title, services_individual_desc, services_individual_include, services_individual_img }])
             .select();
 
         if (error) {
@@ -995,7 +980,7 @@ app.post('/services_individual', upload.single('services_individual_img'), async
     }
 });
 
-// Get all services_individual
+// Get all services_individual entries
 app.get('/services_individual', async (req, res) => {
     const { data, error } = await supabase.from('services_individual').select('*');
 
@@ -1006,7 +991,7 @@ app.get('/services_individual', async (req, res) => {
     res.json(data);
 });
 
-// Get a single services_individual
+// Get a single services_individual entry
 app.get('/services_individual/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('services_individual').select('*').eq('id', id).single();
@@ -1018,36 +1003,22 @@ app.get('/services_individual/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a services_individual (with image upload)
+// Update a services_individual entry (with image upload)
 app.put('/services_individual/:id', upload.single('services_individual_img'), async (req, res) => {
     try {
         const { id } = req.params;
-        const {
-            services_individual_name,
-            services_individual_title,
-            services_individual_desc,
-            include_1,
-            include_2,
-            include_3,
-        } = req.body;
+        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
 
-        let updateData = {
-            services_individual_name,
-            services_individual_title,
-            services_individual_desc,
-        };
+        let updateData = { services_individual_name, services_individual_title, services_individual_desc, services_individual_include };
 
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const services_individual_img = await uploadServicesToSupabase(req.file, filePath); // Use servicesbucket
+            const filePath = `services_individual/${Date.now()}${path.extname(req.file.originalname)}`;
+            const services_individual_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_individual_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload services individual image' });
             }
             updateData.services_individual_img = services_individual_img;
         }
-
-        const includes = [include_1, include_2, include_3].filter(Boolean); // Filter out empty includes
-        updateData.services_individual_include = includes;
 
         const { data, error } = await supabase
             .from('services_individual')
@@ -1065,7 +1036,7 @@ app.put('/services_individual/:id', upload.single('services_individual_img'), as
     }
 });
 
-// Delete a services_individual
+// Delete a services_individual entry
 app.delete('/services_individual/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('services_individual').delete().eq('id', id);
@@ -1074,7 +1045,7 @@ app.delete('/services_individual/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Services_individual deleted', data });
+    res.json({ message: 'Services individual entry deleted', data });
 });
 
 // --------------------- SERVICES_SPECIAL CRUD ---------------------
