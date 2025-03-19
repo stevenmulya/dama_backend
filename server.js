@@ -1079,38 +1079,23 @@ app.delete('/services_individual/:id', async (req, res) => {
 
 // --------------------- SERVICES_SPECIAL CRUD ---------------------
 
-// Create a services_special
+// Create a services_special entry (with image upload)
 app.post('/services_special', upload.single('services_special_img'), async (req, res) => {
     try {
-        const {
-            services_special_name,
-            services_special_title,
-            services_special_desc,
-            include_1,
-            include_2,
-            include_3,
-        } = req.body;
+        const { services_special_name, services_special_title, services_special_desc, services_special_include } = req.body;
 
         let services_special_img = null;
         if (req.file) {
-            const filePath = `<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(req.file.originalname)}`;
-            services_special_img = await uploadServicesToSupabase(req.file, filePath); // Use servicesbucket
+            const filePath = `services_special/${Date.now()}${path.extname(req.file.originalname)}`;
+            services_special_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_special_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload services special image' });
             }
         }
 
-        const includes = [include_1, include_2, include_3].filter(Boolean); // Filter out empty includes
-
         const { data, error } = await supabase
             .from('services_special')
-            .insert([{
-                services_special_img,
-                services_special_name,
-                services_special_title,
-                services_special_desc,
-                services_special_include: includes,
-            }])
+            .insert([{ services_special_name, services_special_title, services_special_desc, services_special_include, services_special_img }])
             .select();
 
         if (error) {
@@ -1123,7 +1108,7 @@ app.post('/services_special', upload.single('services_special_img'), async (req,
     }
 });
 
-// Get all services_special
+// Get all services_special entries
 app.get('/services_special', async (req, res) => {
     const { data, error } = await supabase.from('services_special').select('*');
 
@@ -1134,7 +1119,7 @@ app.get('/services_special', async (req, res) => {
     res.json(data);
 });
 
-// Get a single services_special
+// Get a single services_special entry
 app.get('/services_special/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('services_special').select('*').eq('id', id).single();
@@ -1146,40 +1131,27 @@ app.get('/services_special/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a services_special (with image upload)
+// Update a services_special entry (with image upload)
 app.put('/services_special/:id', upload.single('services_special_img'), async (req, res) => {
     try {
         const { id } = req.params;
-        const {
-            services_special_name,
-            services_special_title,
-            services_special_desc,
-            include_1,
-            include_2,
-            include_3,
-        } = req.body;
+        const { services_special_name, services_special_title, services_special_desc, services_special_include } = req.body;
 
-        let updateData = {
-            services_special_name,
-            services_special_title,
-            services_special_desc,
-        };
+        let updateData = { services_special_name, services_special_title, services_special_desc, services_special_include };
 
         if (req.file) {
-            const filePath = `<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(req.file.originalname)}`;
-            const services_special_img = await uploadServicesToSupabase(req.file, filePath); // Use servicesbucket
+            const filePath = `services_special/${Date.now()}${path.extname(req.file.originalname)}`;
+            const services_special_img = await uploadServicesToSupabase(req.file, filePath);
             if (!services_special_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload services special image' });
             }
             updateData.services_special_img = services_special_img;
         }
 
-        const includes = [include_1, include_2, include_3].filter(Boolean); // Filter out empty includes
-        updateData.services_special_include = includes;
-
         const { data, error } = await supabase
             .from('services_special')
-            .update(updateData).eq('id', id)
+            .update(updateData)
+            .eq('id', id)
             .select();
 
         if (error) {
@@ -1192,7 +1164,7 @@ app.put('/services_special/:id', upload.single('services_special_img'), async (r
     }
 });
 
-// Delete a services_special
+// Delete a services_special entry
 app.delete('/services_special/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('services_special').delete().eq('id', id);
@@ -1201,8 +1173,9 @@ app.delete('/services_special/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Services_special deleted', data });
+    res.json({ message: 'Services special entry deleted', data });
 });
+
 
 // --------------------- WORKS CRUD ---------------------
 
