@@ -595,23 +595,23 @@ app.delete('/testimonials/:id', async (req, res) => {
 
 // --------------------- CONNECT CRUD ---------------------
 
-// Create a connect (with image upload)
+// Create a connect entry (with image upload)
 app.post('/connect', upload.single('connect_img'), async (req, res) => {
     try {
         const { connect_text } = req.body;
 
         let connect_img = null;
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            connect_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `connect/${Date.now()}${path.extname(req.file.originalname)}`;
+            connect_img = await uploadFileToSupabase(req.file, filePath);
             if (!connect_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload connect image' });
             }
         }
 
         const { data, error } = await supabase
             .from('connect')
-            .insert([{ connect_img, connect_text }])
+            .insert([{ connect_text, connect_img }])
             .select();
 
         if (error) {
@@ -624,7 +624,7 @@ app.post('/connect', upload.single('connect_img'), async (req, res) => {
     }
 });
 
-// Get all connects
+// Get all connect entries
 app.get('/connect', async (req, res) => {
     const { data, error } = await supabase.from('connect').select('*');
 
@@ -635,7 +635,7 @@ app.get('/connect', async (req, res) => {
     res.json(data);
 });
 
-// Get a single connect
+// Get a single connect entry
 app.get('/connect/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('connect').select('*').eq('id', id).single();
@@ -647,7 +647,7 @@ app.get('/connect/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a connect (with image upload)
+// Update a connect entry (with image upload)
 app.put('/connect/:id', upload.single('connect_img'), async (req, res) => {
     try {
         const { id } = req.params;
@@ -656,10 +656,10 @@ app.put('/connect/:id', upload.single('connect_img'), async (req, res) => {
         let updateData = { connect_text };
 
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const connect_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `connect/${Date.now()}${path.extname(req.file.originalname)}`;
+            const connect_img = await uploadFileToSupabase(req.file, filePath);
             if (!connect_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload connect image' });
             }
             updateData.connect_img = connect_img;
         }
@@ -680,7 +680,7 @@ app.put('/connect/:id', upload.single('connect_img'), async (req, res) => {
     }
 });
 
-// Delete a connect
+// Delete a connect entry
 app.delete('/connect/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('connect').delete().eq('id', id);
@@ -689,7 +689,7 @@ app.delete('/connect/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Connect deleted', data });
+    res.json({ message: 'Connect entry deleted', data });
 });
 
 // --------------------- INSTAGRAMS CRUD ---------------------
