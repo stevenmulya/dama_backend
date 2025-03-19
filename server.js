@@ -503,26 +503,28 @@ app.post('/testimonials', upload.single('testimonial_img'), async (req, res) => 
 
         let testimonial_img = null;
         if (req.file) {
-            const filePath = `<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(req.file.originalname)}`;
-            testimonial_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `testimonials/${Date.now()}${path.extname(req.file.originalname)}`;
+            testimonial_img = await uploadFileToSupabase(req.file, filePath);
             if (!testimonial_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload testimonial image' });
             }
         }
 
         const { data, error } = await supabase
             .from('testimonials')
-            .insert([{ testimonial_img, testimonial_from, testimonial_text }])
-            .select();if (error) {
-                return res.status(400).json({ error: error.message });
-            }
-    
-            res.json(data);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+            .insert([{ testimonial_from, testimonial_text, testimonial_img }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
         }
-    });
-    
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get all testimonials
 app.get('/testimonials', async (req, res) => {
     const { data, error } = await supabase.from('testimonials').select('*');
@@ -555,10 +557,10 @@ app.put('/testimonials/:id', upload.single('testimonial_img'), async (req, res) 
         let updateData = { testimonial_from, testimonial_text };
 
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const testimonial_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `testimonials/${Date.now()}${path.extname(req.file.originalname)}`;
+            const testimonial_img = await uploadFileToSupabase(req.file, filePath);
             if (!testimonial_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload testimonial image' });
             }
             updateData.testimonial_img = testimonial_img;
         }
