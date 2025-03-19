@@ -319,13 +319,13 @@ app.delete('/toservices/:id', async (req, res) => {
 // --------------------- CLIENTLOGO CRUD ---------------------
 
 // Create a clientlogo (with image upload)
-app.post('/clientlogos', upload.single('client_logo_img'), async (req, res) => {
+app.post('/ourclients', upload.single('client_logo_img'), async (req, res) => {
     try {
         const { client_name, client_link } = req.body;
 
         let client_logo_img = null;
         if (req.file) {
-            const filePath = `clientlogos/${Date.now()}${path.extname(req.file.originalname)}`;
+            const filePath = `ourclients/${Date.now()}${path.extname(req.file.originalname)}`;
             client_logo_img = await uploadFileToSupabase(req.file, filePath);
             if (!client_logo_img) {
                 return res.status(500).json({ error: 'Failed to upload client logo image' });
@@ -333,7 +333,7 @@ app.post('/clientlogos', upload.single('client_logo_img'), async (req, res) => {
         }
 
         const { data, error } = await supabase
-            .from('clientlogos')
+            .from('ourclients')
             .insert([{ client_logo_img, client_name, client_link }])
             .select();
 
@@ -348,8 +348,8 @@ app.post('/clientlogos', upload.single('client_logo_img'), async (req, res) => {
 });
 
 // Get all clientlogos
-app.get('/clientlogos', async (req, res) => {
-    const { data, error } = await supabase.from('clientlogos').select('*');
+app.get('/ourclients', async (req, res) => {
+    const { data, error } = await supabase.from('ourclients').select('*');
 
     if (error) {
         return res.status(400).json({ error: error.message });
@@ -359,9 +359,9 @@ app.get('/clientlogos', async (req, res) => {
 });
 
 // Get a single clientlogo
-app.get('/clientlogos/:id', async (req, res) => {
+app.get('/ourclients/:id', async (req, res) => {
     const { id } = req.params;
-    const { data, error } = await supabase.from('clientlogos').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('ourclients').select('*').eq('id', id).single();
 
     if (error) {
         return res.status(400).json({ error: error.message });
@@ -371,7 +371,7 @@ app.get('/clientlogos/:id', async (req, res) => {
 });
 
 // Update a clientlogo (with image upload)
-app.put('/clientlogos/:id', upload.single('client_logo_img'), async (req, res) => {
+app.put('/ourclients/:id', upload.single('client_logo_img'), async (req, res) => {
     try {
         const { id } = req.params;
         const { client_name, client_link } = req.body;
@@ -379,7 +379,7 @@ app.put('/clientlogos/:id', upload.single('client_logo_img'), async (req, res) =
         let updateData = { client_name, client_link };
 
         if (req.file) {
-            const filePath = `clientlogos/${Date.now()}${path.extname(req.file.originalname)}`;
+            const filePath = `ourclients/${Date.now()}${path.extname(req.file.originalname)}`;
             const client_logo_img = await uploadFileToSupabase(req.file, filePath);
             if (!client_logo_img) {
                 return res.status(500).json({ error: 'Failed to upload client logo image' });
@@ -388,7 +388,7 @@ app.put('/clientlogos/:id', upload.single('client_logo_img'), async (req, res) =
         }
 
         const { data, error } = await supabase
-            .from('clientlogos')
+            .from('ourclients')
             .update(updateData)
             .eq('id', id)
             .select();
@@ -404,9 +404,9 @@ app.put('/clientlogos/:id', upload.single('client_logo_img'), async (req, res) =
 });
 
 // Delete a clientlogo
-app.delete('/clientlogos/:id', async (req, res) => {
+app.delete('/ourclients/:id', async (req, res) => {
     const { id } = req.params;
-    const { data, error } = await supabase.from('clientlogos').delete().eq('id', id);
+    const { data, error } = await supabase.from('ourclients').delete().eq('id', id);
 
     if (error) {
         return res.status(400).json({ error: error.message });
