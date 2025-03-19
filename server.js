@@ -694,17 +694,17 @@ app.delete('/connect/:id', async (req, res) => {
 
 // --------------------- INSTAGRAMS CRUD ---------------------
 
-// Create an instagram (with image upload)
+// Create an instagram entry (with image upload)
 app.post('/instagrams', upload.single('instagram_img'), async (req, res) => {
     try {
         const { instagram_name, instagram_link } = req.body;
 
         let instagram_img = null;
         if (req.file) {
-            const filePath = `<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(req.file.originalname)}`;
-            instagram_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `instagrams/${Date.now()}${path.extname(req.file.originalname)}`;
+            instagram_img = await uploadFileToSupabase(req.file, filePath);
             if (!instagram_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload instagram image' });
             }
         }
 
@@ -723,7 +723,7 @@ app.post('/instagrams', upload.single('instagram_img'), async (req, res) => {
     }
 });
 
-// Get all instagrams
+// Get all instagram entries
 app.get('/instagrams', async (req, res) => {
     const { data, error } = await supabase.from('instagrams').select('*');
 
@@ -734,7 +734,7 @@ app.get('/instagrams', async (req, res) => {
     res.json(data);
 });
 
-// Get a single instagram
+// Get a single instagram entry
 app.get('/instagrams/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('instagrams').select('*').eq('id', id).single();
@@ -746,19 +746,19 @@ app.get('/instagrams/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update an instagram (with image upload)
+// Update an instagram entry (with image upload)
 app.put('/instagrams/:id', upload.single('instagram_img'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { instagram_instagram_name, instagram_link } = req.body;
+        const { instagram_name, instagram_link } = req.body;
 
         let updateData = { instagram_name, instagram_link };
 
         if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const instagram_img = await uploadHomeToSupabase(req.file, filePath);
+            const filePath = `instagrams/${Date.now()}${path.extname(req.file.originalname)}`;
+            const instagram_img = await uploadFileToSupabase(req.file, filePath);
             if (!instagram_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
+                return res.status(500).json({ error: 'Failed to upload instagram image' });
             }
             updateData.instagram_img = instagram_img;
         }
@@ -779,7 +779,7 @@ app.put('/instagrams/:id', upload.single('instagram_img'), async (req, res) => {
     }
 });
 
-// Delete an instagram
+// Delete an instagram entry
 app.delete('/instagrams/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('instagrams').delete().eq('id', id);
@@ -788,7 +788,7 @@ app.delete('/instagrams/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Instagram deleted', data });
+    res.json({ message: 'Instagram entry deleted', data });
 });
 
 // --------------------- DAMA CRUD ---------------------
