@@ -793,23 +793,14 @@ app.delete('/instagrams/:id', async (req, res) => {
 
 // --------------------- DAMA CRUD ---------------------
 
-// Create a dama (with image upload)
-app.post('/dama', upload.single('dama_logo'), async (req, res) => {
+// Create a dama entry
+app.post('/dama', async (req, res) => {
     try {
-        const { dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok, dama_cv } = req.body;
-
-        let dama_logo = null;
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            dama_logo = await uploadHomeToSupabase(req.file, filePath);
-            if (!dama_logo) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-        }
+        const { dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok } = req.body;
 
         const { data, error } = await supabase
             .from('dama')
-            .insert([{ dama_logo, dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok, dama_cv }])
+            .insert([{ dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok }])
             .select();
 
         if (error) {
@@ -822,7 +813,7 @@ app.post('/dama', upload.single('dama_logo'), async (req, res) => {
     }
 });
 
-// Get all damas
+// Get all dama entries
 app.get('/dama', async (req, res) => {
     const { data, error } = await supabase.from('dama').select('*');
 
@@ -833,7 +824,7 @@ app.get('/dama', async (req, res) => {
     res.json(data);
 });
 
-// Get a single dama
+// Get a single dama entry
 app.get('/dama/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('dama').select('*').eq('id', id).single();
@@ -845,26 +836,15 @@ app.get('/dama/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a dama (with image upload)
-app.put('/dama/:id', upload.single('dama_logo'), async (req, res) => {
+// Update a dama entry
+app.put('/dama/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok, dama_cv } = req.body;
-
-        let updateData = { dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok, dama_cv };
-
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const dama_logo = await uploadHomeToSupabase(req.file, filePath);
-            if (!dama_logo) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-            updateData.dama_logo = dama_logo;
-        }
+        const { dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok } = req.body;
 
         const { data, error } = await supabase
             .from('dama')
-            .update(updateData)
+            .update({ dama_whatsapp, dama_instagram, dama_linkedin, dama_tiktok })
             .eq('id', id)
             .select();
 
@@ -878,7 +858,7 @@ app.put('/dama/:id', upload.single('dama_logo'), async (req, res) => {
     }
 });
 
-// Delete a dama
+// Delete a dama entry
 app.delete('/dama/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('dama').delete().eq('id', id);
@@ -887,7 +867,86 @@ app.delete('/dama/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Dama deleted', data });
+    res.json({ message: 'Dama entry deleted', data });
+});
+
+// --------------------- FAQ CRUD ---------------------
+
+// Create a FAQ entry
+app.post('/faq', async (req, res) => {
+    try {
+        const { faq_question, faq_answer } = req.body;
+
+        const { data, error } = await supabase
+            .from('faq')
+            .insert([{ faq_question, faq_answer }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all FAQ entries
+app.get('/faq', async (req, res) => {
+    const { data, error } = await supabase.from('faq').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single FAQ entry
+app.get('/faq/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('faq').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a FAQ entry
+app.put('/faq/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { faq_question, faq_answer } = req.body;
+
+        const { data, error } = await supabase
+            .from('faq')
+            .update({ faq_question, faq_answer })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a FAQ entry
+app.delete('/faq/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('faq').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'FAQ entry deleted', data });
 });
 
 // --------------------- SERVICES_INDIVIDUAL CRUD ---------------------
