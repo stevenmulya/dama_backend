@@ -22,24 +22,16 @@ app.use(express.json());
 const storageConfig = multer.memoryStorage();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Fungsi untuk mengunggah MyPortofolio ke Supabase Storage
-async function uploadHomeToSupabase(file, filePath) {
-    try {
-        const { error, data } = await storage
-            .from('homebucket')
-            .upload(filePath, file.buffer, { contentType: file.mimetype });
-
-        if (error) {
-            console.error('Supabase Storage Error:', error);
-            return null;
-        }
-
-        return `${supabaseUrl}/storage/v1/object/public/homebucket/${filePath}`;
-    } catch (error) {
-        console.error("Error uploading to Supabase Storage:", error);
-        return null;
-    }
-}
+const VALID_WORK_CATEGORIES = [
+    "Start Up Package",
+    "Brand Management",
+    "Brand Consultation",
+    "Collection Development",
+    "TikTok Management",
+    "Social Media Management",
+    "Styling & Creative Direction",
+    "Fabric Sourcing & Consulting"
+];
 
 // Fungsi untuk mengunggah MyServices ke Supabase Storage
 async function uploadServicesToSupabase(file, filePath) {
@@ -1189,6 +1181,11 @@ app.post('/works', upload.fields([
 ]), async (req, res) => {
     try {
         const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category } = req.body;
+
+        if (!VALID_WORK_CATEGORIES.includes(work_category)) {
+            return res.status(400).json({ error: "Invalid work_category value" });
+        }
+
         let work_main_img = null;
         let work_logo_img = null;
         let work_img = [];
@@ -1249,6 +1246,11 @@ app.put('/works/:id', upload.fields([
     try {
         const { id } = req.params;
         const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category } = req.body;
+
+        if (!VALID_WORK_CATEGORIES.includes(work_category)) {
+            return res.status(400).json({ error: "Invalid work_category value" });
+        }
+
         let updateData = { work_title, work_subtitle, work_desc, work_detail, work_people, work_category };
 
         if (req.files['work_main_img']) {
@@ -1288,8 +1290,6 @@ app.delete('/works/:id', async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Work deleted successfully' });
 });
-
-
 // --------------------- START SERVER ---------------------
 
 app.listen(port, () => {
