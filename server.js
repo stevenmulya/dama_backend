@@ -60,11 +60,12 @@ async function uploadServicesToSupabase(file, filePath) {
     }
 }
 
-// Fungsi untuk mengunggah MyBlog ke Supabase Storage
+// Fungsi untuk upload file ke Supabase Storage
 async function uploadWorksToSupabase(file, filePath) {
     try {
-        const { error, data } = await storage
-            .from('worksbucket')
+        const { error, data } = await supabase
+            .storage
+            .from('homebucket') // Ganti dengan nama bucket Anda
             .upload(filePath, file.buffer, { contentType: file.mimetype });
 
         if (error) {
@@ -72,12 +73,13 @@ async function uploadWorksToSupabase(file, filePath) {
             return null;
         }
 
-        return `${supabaseUrl}/storage/v1/object/public/worksbucket/${filePath}`;
+        return `<span class="math-inline">\{supabaseUrl\}/storage/v1/object/public/homebucket/</span>{filePath}`; // Ganti dengan nama bucket Anda
     } catch (error) {
         console.error("Error uploading to Supabase Storage:", error);
         return null;
     }
 }
+
 
 // Fungsi untuk mengunggah file ke Supabase Storage
 async function uploadBlogsToSupabase(file, filePath) {
@@ -1177,69 +1179,51 @@ app.delete('/services_special/:id', async (req, res) => {
 });
 // --------------------- WORKS CRUD ---------------------
 
-// Create a work
+// Create a works entry (with image uploads)
 app.post('/works', upload.fields([
-    { name: 'work_img', maxCount: 10 },
     { name: 'work_main_img', maxCount: 1 },
-    { name: 'work_logo_img', maxCount: 1 }
+    { name: 'work_logo_img', maxCount: 1 },
+    { name: 'work_img', maxCount: 10 } // Asumsi maksimal 10 gambar untuk work_img
 ]), async (req, res) => {
     try {
-        const {
-            work_title,
-            work_subtitle,
-            work_desc,
-            work_detail,
-            work_people,
-            work_category,
-        } = req.body;
+        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category } = req.body;
 
-        let work_img = [];
         let work_main_img = null;
-        let work_logo_img = null;
-
-        if (req.files['work_img'] && req.files['work_img'].length > 0) {
-            for (const file of req.files['work_img']) {
-                const filePath = `${Date.now()}-${file.originalname}`;
-                const imageUrl = await uploadWorksToSupabase(file, filePath); // Use worksbucket
-
-                if (imageUrl) {
-                    work_img.push(imageUrl);
-                } else {
-                    return res.status(500).json({ error: 'Failed to upload one or more work images' });
-                }
-            }
-        }
-
-        if (req.files['work_main_img'] && req.files['work_main_img'].length > 0) {
-            const file = req.files['work_main_img'][0];
-            const filePath = `${Date.now()}-main-${file.originalname}`;
-            work_main_img = await uploadWorksToSupabase(file, filePath); // Use worksbucket
+        if (req.files['work_main_img']) {
+            const mainImgFile = req.files['work_main_img'][0];
+            const mainImgPath = `works/main/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(mainImgFile.originalname)}`;
+            work_main_img = await uploadWorksToSupabase(mainImgFile, mainImgPath);
             if (!work_main_img) {
                 return res.status(500).json({ error: 'Failed to upload work main image' });
             }
         }
 
-        if (req.files['work_logo_img'] && req.files['work_logo_img'].length > 0) {
-            const file = req.files['work_logo_img'][0];
-            const filePath = `${Date.now()}-logo-${file.originalname}`;
-            work_logo_img = await uploadWorksToSupabase(file, filePath); // Use worksbucket
+        let work_logo_img = null;
+        if (req.files['work_logo_img']) {
+            const logoImgFile = req.files['work_logo_img'][0];
+            const logoImgPath = `works/logo/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(logoImgFile.originalname)}`;
+            work_logo_img = await uploadWorksToSupabase(logoImgFile, logoImgPath);
             if (!work_logo_img) {
                 return res.status(500).json({ error: 'Failed to upload work logo image' });
+            }
+        }
+
+        let work_img = [];
+        if (req.files['work_img']) {
+            for (const file of req.files['work_img']) {
+                const imgPath = `works/images/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(file.originalname)}`;
+                const imgUrl = await uploadWorksToSupabase(file, imgPath);
+                if (imgUrl) {
+                    work_img.push(imgUrl);
+                }
             }
         }
 
         const { data, error } = await supabase
             .from('works')
             .insert([{
-                work_title,
-                work_subtitle,
-                work_desc,
-                work_detail,
-                work_people,
-                work_category,
-                work_img,
-                work_main_img,
-                work_logo_img,
+                work_title, work_subtitle, work_desc, work_detail, work_people,
+                work_category, work_img, work_main_img, work_logo_img
             }])
             .select();
 
@@ -1253,7 +1237,7 @@ app.post('/works', upload.fields([
     }
 });
 
-// Get all works
+// Get all works entries
 app.get('/works', async (req, res) => {
     const { data, error } = await supabase.from('works').select('*');
 
@@ -1264,7 +1248,7 @@ app.get('/works', async (req, res) => {
     res.json(data);
 });
 
-// Get a single work
+// Get a single works entry
 app.get('/works/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('works').select('*').eq('id', id).single();
@@ -1276,68 +1260,51 @@ app.get('/works/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a work (with image upload)
+// Update a works entry (with image uploads)
 app.put('/works/:id', upload.fields([
-    { name: 'work_img', maxCount: 10 },
     { name: 'work_main_img', maxCount: 1 },
-    { name: 'work_logo_img', maxCount: 1 }
+    { name: 'work_logo_img', maxCount: 1 },
+    { name: 'work_img', maxCount: 10 } // Asumsi maksimal 10 gambar untuk work_img
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const {
-            work_title,
-            work_subtitle,
-            work_desc,
-            work_detail,
-            work_people,
-            work_category,
-        } = req.body;
+        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category } = req.body;
 
         let updateData = {
-            work_title,
-            work_subtitle,
-            work_desc,
-            work_detail,
-            work_people,
-            work_category,
+            work_title, work_subtitle, work_desc, work_detail, work_people,
+            work_category
         };
 
-        let work_img = [];
-        let work_main_img = null;
-        let work_logo_img = null;
-
-        if (req.files['work_img'] && req.files['work_img'].length > 0) {
-            for (const file of req.files['work_img']) {
-                const filePath = `${Date.now()}-${file.originalname}`;
-                const imageUrl = await uploadWorksToSupabase(file, filePath); // Use worksbucket
-
-                if (imageUrl) {
-                    work_img.push(imageUrl);
-                } else {
-                    return res.status(500).json({ error: 'Failed to upload one or more work images' });
-                }
-            }
-            updateData.work_img = work_img;
-        }
-
-        if (req.files['work_main_img'] && req.files['work_main_img'].length > 0) {
-            const file = req.files['work_main_img'][0];
-            const filePath = `${Date.now()}-main-${file.originalname}`;
-            work_main_img = await uploadWorksToSupabase(file, filePath); // Use worksbucket
+        if (req.files['work_main_img']) {
+            const mainImgFile = req.files['work_main_img'][0];
+            const mainImgPath = `works/main/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(mainImgFile.originalname)}`;
+            const work_main_img = await uploadWorksToSupabase(mainImgFile, mainImgPath);
             if (!work_main_img) {
                 return res.status(500).json({ error: 'Failed to upload work main image' });
             }
             updateData.work_main_img = work_main_img;
         }
 
-        if (req.files['work_logo_img'] && req.files['work_logo_img'].length > 0) {
-            const file = req.files['work_logo_img'][0];
-            const filePath = `${Date.now()}-logo-${file.originalname}`;
-            work_logo_img = await uploadWorksToSupabase(file, filePath); // Use worksbucket
+        if (req.files['work_logo_img']) {
+            const logoImgFile = req.files['work_logo_img'][0];
+            const logoImgPath = `works/logo/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(logoImgFile.originalname)}`;
+            const work_logo_img = await uploadWorksToSupabase(logoImgFile, logoImgPath);
             if (!work_logo_img) {
                 return res.status(500).json({ error: 'Failed to upload work logo image' });
             }
             updateData.work_logo_img = work_logo_img;
+        }
+
+        let work_img = [];
+        if (req.files['work_img']) {
+            for (const file of req.files['work_img']) {
+                const imgPath = `works/images/<span class="math-inline">\{Date\.now\(\)\}</span>{path.extname(file.originalname)}`;
+                const imgUrl = await uploadWorksToSupabase(file, imgPath);
+                if (imgUrl) {
+                    work_img.push(imgUrl);
+                }
+            }
+            updateData.work_img = work_img;
         }
 
         const { data, error } = await supabase
@@ -1356,7 +1323,7 @@ app.put('/works/:id', upload.fields([
     }
 });
 
-// Delete a work
+// Delete a works entry
 app.delete('/works/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase.from('works').delete().eq('id', id);
@@ -1365,139 +1332,9 @@ app.delete('/works/:id', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Work deleted', data });
+    res.json({ message: 'Works entry deleted', data });
 });
 
-// --------------------- BLOGS CRUD ---------------------
-
-// Create a blog (with image upload)
-app.post('/blogs', upload.single('blog_img'), async (req, res) => {
-    try {
-        const { blog_title, blog_desc, blog_author, blog_date, blog_content } = req.body;
-
-        let blog_img = null;
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            blog_img = await uploadBlogsToSupabase(req.file, filePath);
-            if (!blog_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-        }
-
-        const { data, error } = await supabase
-            .from('blogs')
-            .insert([{
-                blog_title,
-                blog_desc,
-                blog_img,
-                blog_author,
-                blog_date,
-                blog_content,
-            }])
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get all blogs
-app.get('/blogs', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('blogs').select('*');
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get a single blog
-app.get('/blogs/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { data, error } = await supabase
-            .from('blogs')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Update a blog (with image upload)
-app.put('/blogs/:id', upload.single('blog_img'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { blog_title, blog_desc, blog_author, blog_date, blog_content } = req.body;
-
-        let updateData = {
-            blog_title,
-            blog_desc,
-            blog_author,
-            blog_date,
-            blog_content,
-        };
-
-        if (req.file) {
-            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
-            const blog_img = await uploadBlogsToSupabase(req.file, filePath);
-            if (!blog_img) {
-                return res.status(500).json({ error: 'Failed to upload image' });
-            }
-            updateData.blog_img = blog_img;
-        }
-
-        const { data, error } = await supabase
-            .from('blogs')
-            .update(updateData)
-            .eq('id', id)
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete a blog
-app.delete('/blogs/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { data, error } = await supabase
-            .from('blogs')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.json({ message: 'Blog deleted', data });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // --------------------- START SERVER ---------------------
 
