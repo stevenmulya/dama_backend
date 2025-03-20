@@ -65,7 +65,7 @@ async function uploadWorksToSupabase(file, filePath) {
     try {
         const { error, data } = await supabase
             .storage
-            .from('homebucket') // Ganti dengan nama bucket Anda
+            .from('worksbucket') // Ganti dengan nama bucket Anda
             .upload(filePath, file.buffer, { contentType: file.mimetype });
 
         if (error) {
@@ -73,7 +73,7 @@ async function uploadWorksToSupabase(file, filePath) {
             return null;
         }
 
-        return `<span class="math-inline">\{supabaseUrl\}/storage/v1/object/public/homebucket/</span>{filePath}`; // Ganti dengan nama bucket Anda
+        return `<span class="math-inline">\{supabaseUrl\}/storage/v1/object/public/worksbucket/</span>{filePath}`; // Ganti dengan nama bucket Anda
     } catch (error) {
         console.error("Error uploading to Supabase Storage:", error);
         return null;
