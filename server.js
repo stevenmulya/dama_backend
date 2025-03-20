@@ -60,7 +60,6 @@ async function uploadServicesToSupabase(file, filePath) {
     }
 }
 
-// Fungsi untuk upload file ke Supabase Storage
 async function uploadWorksToSupabase(file, filePath) {
     try {
         const { error, data } = await supabase
@@ -73,7 +72,7 @@ async function uploadWorksToSupabase(file, filePath) {
             return null;
         }
 
-        return `<span class="math-inline">\{supabaseUrl\}/storage/v1/object/public/worksbucket/</span>{filePath}`; // Ganti dengan nama bucket Anda
+        return `${supabaseUrl}/storage/v1/object/public/worksbucket/${filePath}`; // Ganti dengan nama bucket Anda
     } catch (error) {
         console.error('Error uploading to Supabase Storage:', error);
         return null;
