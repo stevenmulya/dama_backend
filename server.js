@@ -1290,6 +1290,107 @@ app.delete('/works/:id', async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Work deleted successfully' });
 });
+
+// --------------------- WORK PAGE CRUD ---------------------
+
+// Create a work_page entry (with image upload)
+app.post('/work_page', upload.single('work_page_img'), async (req, res) => {
+    try {
+        const { work_page_title, work_page_subtitle } = req.body;
+
+        let work_page_img = null;
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            work_page_img = await uploadFileToSupabase(req.file, filePath);
+            if (!work_page_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('work_page')
+            .insert([{ work_page_img, work_page_title, work_page_subtitle }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all work_page entries
+app.get('/work_page', async (req, res) => {
+    const { data, error } = await supabase.from('work_page').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single work_page entry
+app.get('/work_page/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('work_page').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a work_page entry (with image upload)
+app.put('/work_page/:id', upload.single('work_page_img'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { work_page_title, work_page_subtitle } = req.body;
+
+        let updateData = { work_page_title, work_page_subtitle };
+
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const work_page_img = await uploadFileToSupabase(req.file, filePath);
+            if (!work_page_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+            updateData.work_page_img = work_page_img;
+        }
+
+        const { data, error } = await supabase
+            .from('work_page')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a work_page entry
+app.delete('/work_page/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('work_page').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Work page entry deleted', data });
+});
+
+
 // --------------------- START SERVER ---------------------
 
 app.listen(port, () => {
