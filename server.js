@@ -1390,6 +1390,102 @@ app.delete('/work_page/:id', async (req, res) => {
     res.json({ message: 'Work page entry deleted', data });
 });
 
+// --------------------- BLOGS CRUD ---------------------
+
+// Create a blog entry (with image uploads)
+app.post('/blogs', upload.fields([
+    { name: 'cover_image', maxCount: 1 },
+    { name: 'image_list', maxCount: 10 }
+]), async (req, res) => {
+    try {
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published } = req.body;
+
+        let cover_image = null;
+        let image_list = [];
+
+        if (req.files['cover_image']) {
+            const coverImgFile = req.files['cover_image'][0];
+            const coverImgPath = `blogs/cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
+            cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
+        }
+
+        if (req.files['image_list']) {
+            for (const file of req.files['image_list']) {
+                const imgPath = `blogs/images/${Date.now()}${path.extname(file.originalname)}`;
+                const imgUrl = await uploadBlogsToSupabase(file, imgPath);
+                if (imgUrl) image_list.push(imgUrl);
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('blogs')
+            .insert([{ title, slug, content, excerpt, cover_image, image_list, author_name, author_contact, published_at, is_published }])
+            .select();
+
+        if (error) return res.status(400).json({ error: error.message });
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all blog entries
+app.get('/blogs', async (req, res) => {
+    const { data, error } = await supabase.from('blogs').select('*');
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+// Get a single blog entry
+app.get('/blogs/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('blogs').select('*').eq('id', id).single();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+// Update a blog entry (with image uploads)
+app.put('/blogs/:id', upload.fields([
+    { name: 'cover_image', maxCount: 1 },
+    { name: 'image_list', maxCount: 10 }
+]), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published } = req.body;
+
+        let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published };
+
+        if (req.files['cover_image']) {
+            const coverImgFile = req.files['cover_image'][0];
+            const coverImgPath = `blogs/cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
+            updateData.cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
+        }
+
+        let image_list = [];
+        if (req.files['image_list']) {
+            for (const file of req.files['image_list']) {
+                const imgPath = `blogs/images/${Date.now()}${path.extname(file.originalname)}`;
+                const imgUrl = await uploadBlogsToSupabase(file, imgPath);
+                if (imgUrl) image_list.push(imgUrl);
+            }
+        }
+        if (image_list.length > 0) updateData.image_list = image_list;
+
+        const { data, error } = await supabase.from('blogs').update(updateData).eq('id', id).select();
+        if (error) return res.status(400).json({ error: error.message });
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a blog entry
+app.delete('/blogs/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('blogs').delete().eq('id', id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Blog deleted successfully' });
+});
 
 // --------------------- START SERVER ---------------------
 
