@@ -1487,6 +1487,105 @@ app.delete('/blogs/:id', async (req, res) => {
     res.json({ message: 'Blog deleted successfully' });
 });
 
+// --------------------- CONTACT CRUD ---------------------
+
+// Create a contact (with image upload)
+app.post('/contacts', upload.single('contact_image'), async (req, res) => {
+    try {
+        const { contact_title, contact_subtitle } = req.body;
+
+        let contact_image = null;
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            contact_image = await uploadFileToSupabase(req.file, filePath);
+            if (!contact_image) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('contact')
+            .insert([{ contact_image, contact_title, contact_subtitle }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all contacts
+app.get('/contacts', async (req, res) => {
+    const { data, error } = await supabase.from('contact').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single contact
+app.get('/contacts/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('contact').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a contact (with image upload)
+app.put('/contacts/:id', upload.single('contact_image'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { contact_title, contact_subtitle } = req.body;
+
+        let updateData = { contact_title, contact_subtitle };
+
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const contact_image = await uploadFileToSupabase(req.file, filePath);
+            if (!contact_image) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+            updateData.contact_image = contact_image;
+        }
+
+        const { data, error } = await supabase
+            .from('contact')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a contact
+app.delete('/contacts/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('contact').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Contact deleted', data });
+});
+
 // --------------------- START SERVER ---------------------
 
 app.listen(port, () => {
