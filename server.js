@@ -1586,6 +1586,414 @@ app.delete('/contacts/:id', async (req, res) => {
     res.json({ message: 'Contact deleted', data });
 });
 
+// --------------------- ABOUT CRUD ---------------------
+
+// Create an about (with image upload)
+app.post('/abouts', upload.single('about_img'), async (req, res) => {
+    try {
+        const { about_title, about_subtitle } = req.body;
+
+        let about_img = null;
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            about_img = await uploadFileToSupabase(req.file, filePath);
+            if (!about_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('about')
+            .insert([{ about_img, about_title, about_subtitle }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all abouts
+app.get('/abouts', async (req, res) => {
+    const { data, error } = await supabase.from('about').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single about
+app.get('/abouts/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('about').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update an about (with image upload)
+app.put('/abouts/:id', upload.single('about_img'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { about_title, about_subtitle } = req.body;
+
+        let updateData = { about_title, about_subtitle };
+
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const about_img = await uploadFileToSupabase(req.file, filePath);
+            if (!about_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+            updateData.about_img = about_img;
+        }
+
+        const { data, error } = await supabase
+            .from('about')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete an about
+app.delete('/abouts/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('about').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'About deleted', data });
+});
+
+// --------------------- VISION CRUD ---------------------
+
+// Create a vision
+app.post('/visions', async (req, res) => {
+    try {
+        const { vision_content } = req.body;
+        const { data, error } = await supabase.from('vision').insert([{ vision_content }]).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all visions
+app.get('/visions', async (req, res) => {
+    const { data, error } = await supabase.from('vision').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single vision
+app.get('/visions/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('vision').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a vision
+app.put('/visions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { vision_content } = req.body;
+        const { data, error } = await supabase.from('vision').update({ vision_content }).eq('id', id).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a vision
+app.delete('/visions/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('vision').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Vision deleted', data });
+});
+
+// --------------------- MISSION CRUD ---------------------
+
+// Create a mission
+app.post('/missions', async (req, res) => {
+    try {
+        const { mission_content } = req.body;
+        const { data, error } = await supabase.from('mission').insert([{ mission_content }]).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all missions
+app.get('/missions', async (req, res) => {
+    const { data, error } = await supabase.from('mission').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single mission
+app.get('/missions/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('mission').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a mission
+app.put('/missions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { mission_content } = req.body;
+        const { data, error } = await supabase.from('mission').update({ mission_content }).eq('id', id).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a mission
+app.delete('/missions/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('mission').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Mission deleted', data });
+});
+
+// --------------------- WHY CRUD ---------------------
+
+// Create a why
+app.post('/whys', async (req, res) => {
+    try {
+        const { why_content } = req.body;
+        const { data, error } = await supabase.from('why').insert([{ why_content }]).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all whys
+app.get('/whys', async (req, res) => {
+    const { data, error } = await supabase.from('why').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single why
+app.get('/whys/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('why').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a why
+app.put('/whys/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { why_content } = req.body;
+        const { data, error } = await supabase.from('why').update({ why_content }).eq('id', id).select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a why
+app.delete('/whys/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('why').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Why deleted', data });
+});
+
+// --------------------- PEOPLE CRUD ---------------------
+
+// Create a people (with image upload)
+app.post('/peoples', upload.single('people_img'), async (req, res) => {
+    try {
+        const { people_name, people_role } = req.body;
+
+        let people_img = null;
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            people_img = await uploadFileToSupabase(req.file, filePath);
+            if (!people_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('people')
+            .insert([{ people_img, people_name, people_role }])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all peoples
+app.get('/peoples', async (req, res) => {
+    const { data, error } = await supabase.from('people').select('*');
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Get a single people
+app.get('/peoples/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('people').select('*').eq('id', id).single();
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
+// Update a people (with image upload)
+app.put('/peoples/:id', upload.single('people_img'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { people_name, people_role } = req.body;
+
+        let updateData = { people_name, people_role };
+
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const people_img = await uploadFileToSupabase(req.file, filePath);
+            if (!people_img) {
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
+            updateData.people_img = people_img;
+        }
+
+        const { data, error } = await supabase
+            .from('people')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a people
+app.delete('/peoples/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('people').delete().eq('id', id);
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'People deleted', data });
+});
+
 // --------------------- START SERVER ---------------------
 
 app.listen(port, () => {
