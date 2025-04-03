@@ -1398,20 +1398,20 @@ app.post('/blogs', upload.fields([
     { name: 'image_list', maxCount: 10 }
 ]), async (req, res) => {
     try {
-        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published } = req.body;
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned } = req.body;
 
         let cover_image = null;
         let image_list = [];
 
         if (req.files['cover_image']) {
             const coverImgFile = req.files['cover_image'][0];
-            const coverImgPath = `blogs/cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
+            const coverImgPath = `cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
             cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
         }
 
         if (req.files['image_list']) {
             for (const file of req.files['image_list']) {
-                const imgPath = `blogs/images/${Date.now()}${path.extname(file.originalname)}`;
+                const imgPath = `images/${Date.now()}${path.extname(file.originalname)}`;
                 const imgUrl = await uploadBlogsToSupabase(file, imgPath);
                 if (imgUrl) image_list.push(imgUrl);
             }
@@ -1419,7 +1419,7 @@ app.post('/blogs', upload.fields([
 
         const { data, error } = await supabase
             .from('blogs')
-            .insert([{ title, slug, content, excerpt, cover_image, image_list, author_name, author_contact, published_at, is_published }])
+            .insert([{ title, slug, content, excerpt, cover_image, image_list, author_name, author_contact, published_at, is_published, is_pinned }])
             .select();
 
         if (error) return res.status(400).json({ error: error.message });
@@ -1451,20 +1451,20 @@ app.put('/blogs/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published } = req.body;
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned } = req.body;
 
-        let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published };
+        let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned };
 
         if (req.files['cover_image']) {
             const coverImgFile = req.files['cover_image'][0];
-            const coverImgPath = `blogs/cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
+            const coverImgPath = `cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
             updateData.cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
         }
 
         let image_list = [];
         if (req.files['image_list']) {
             for (const file of req.files['image_list']) {
-                const imgPath = `blogs/images/${Date.now()}${path.extname(file.originalname)}`;
+                const imgPath = `images/${Date.now()}${path.extname(file.originalname)}`;
                 const imgUrl = await uploadBlogsToSupabase(file, imgPath);
                 if (imgUrl) image_list.push(imgUrl);
             }
