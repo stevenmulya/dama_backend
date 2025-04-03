@@ -950,7 +950,7 @@ app.delete('/faq/:id', async (req, res) => {
 // Create a services_individual entry (with image upload)
 app.post('/services_individual', upload.single('services_individual_img'), async (req, res) => {
     try {
-        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
+        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include, order } = req.body;
 
         let parsedInclude = [];
         try{
@@ -970,7 +970,7 @@ app.post('/services_individual', upload.single('services_individual_img'), async
 
         const { data, error } = await supabase
             .from('services_individual')
-            .insert([{ services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude, services_individual_img }])
+            .insert([{ services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude, services_individual_img, order }])
             .select();
 
         if (error) {
@@ -985,7 +985,7 @@ app.post('/services_individual', upload.single('services_individual_img'), async
 
 // Get all services_individual entries
 app.get('/services_individual', async (req, res) => {
-    const { data, error } = await supabase.from('services_individual').select('*');
+    const { data, error } = await supabase.from('services_individual').select('*').order('order', { ascending: true });
 
     if (error) {
         return res.status(400).json({ error: `Failed to fetch services individual entries: ${error.message}` });
@@ -1010,7 +1010,7 @@ app.get('/services_individual/:id', async (req, res) => {
 app.put('/services_individual/:id', upload.single('services_individual_img'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include } = req.body;
+        const { services_individual_name, services_individual_title, services_individual_desc, services_individual_include, order } = req.body;
 
         let parsedInclude = [];
         try{
@@ -1019,7 +1019,7 @@ app.put('/services_individual/:id', upload.single('services_individual_img'), as
             return res.status(400).json({ error: 'Invalid services_individual_include format. Must be a JSON string.' });
         }
 
-        let updateData = { services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude };
+        let updateData = { services_individual_name, services_individual_title, services_individual_desc, services_individual_include: parsedInclude, order };
 
         if (req.file) {
             const filePath = `services_individual/${Date.now()}${path.extname(req.file.originalname)}`;
@@ -1063,7 +1063,7 @@ app.delete('/services_individual/:id', async (req, res) => {
 // Create a services_special entry (with image upload)
 app.post('/services_special', upload.single('services_special_img'), async (req, res) => {
     try {
-        const { services_special_name, services_special_title, services_special_desc, services_special_include } = req.body;
+        const { services_special_name, services_special_title, services_special_desc, services_special_include, order } = req.body;
 
         let parsedInclude = [];
         try{
@@ -1083,7 +1083,7 @@ app.post('/services_special', upload.single('services_special_img'), async (req,
 
         const { data, error } = await supabase
             .from('services_special')
-            .insert([{ services_special_name, services_special_title, services_special_desc, services_special_include: parsedInclude, services_special_img }])
+            .insert([{ services_special_name, services_special_title, services_special_desc, services_special_include: parsedInclude, services_special_img, order }])
             .select();
 
         if (error) {
@@ -1098,7 +1098,7 @@ app.post('/services_special', upload.single('services_special_img'), async (req,
 
 // Get all services_special entries
 app.get('/services_special', async (req, res) => {
-    const { data, error } = await supabase.from('services_special').select('*');
+    const { data, error } = await supabase.from('services_special').select('*').order('order', { ascending: true });
 
     if (error) {
         return res.status(400).json({ error: `Failed to fetch services special entries: ${error.message}` });
@@ -1123,7 +1123,7 @@ app.get('/services_special/:id', async (req, res) => {
 app.put('/services_special/:id', upload.single('services_special_img'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { services_special_name, services_special_title, services_special_desc, services_special_include } = req.body;
+        const { services_special_name, services_special_title, services_special_desc, services_special_include, order } = req.body;
 
         let parsedInclude = [];
         try{
@@ -1132,7 +1132,7 @@ app.put('/services_special/:id', upload.single('services_special_img'), async (r
             return res.status(400).json({ error: 'Invalid services_special_include format. Must be a JSON string.' });
         }
 
-        let updateData = { services_special_name, services_special_title, services_special_desc, services_special_include: parsedInclude };
+        let updateData = { services_special_name, services_special_title, services_special_desc, services_special_include: parsedInclude, order };
 
         if (req.file) {
             const filePath = `services_special/${Date.now()}${path.extname(req.file.originalname)}`;
