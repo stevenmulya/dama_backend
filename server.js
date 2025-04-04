@@ -4,6 +4,8 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const path = require('path');
+const fetch = require('node-fetch');
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -32,7 +34,26 @@ const VALID_WORK_CATEGORIES = [
     "Styling & Creative Direction",
     "Fabric Sourcing & Consulting"
 ];
+const ASTRO_BUILD_WEBHOOK_URL = process.env.ASTRO_BUILD_WEBHOOK_URL; // Ambil URL webhook dari environment variable
 
+async function triggerAstroBuild() {
+    if (!ASTRO_BUILD_WEBHOOK_URL) {
+        console.warn('ASTRO_BUILD_WEBHOOK_URL tidak dikonfigurasi. Build ulang otomatis tidak akan dipicu.');
+        return;
+    }
+    try {
+        const response = await fetch(ASTRO_BUILD_WEBHOOK_URL, {
+            method: 'POST',
+        });
+        if (response.ok) {
+            console.log('Successfully triggered Astro rebuild.');
+        } else {
+            console.error('Failed to trigger Astro rebuild:', response.status, await response.text());
+        }
+    } catch (error) {
+        console.error('Error sending webhook:', error);
+    }
+}
 // Fungsi untuk mengunggah MyServices ke Supabase Storage
 async function uploadServicesToSupabase(file, filePath) {
     try {
@@ -1390,8 +1411,6 @@ app.delete('/work_page/:id', async (req, res) => {
     res.json({ message: 'Work page entry deleted', data });
 });
 
-// --------------------- BLOGS CRUD ---------------------
-
 // Create a blog entry (with image uploads)
 app.post('/blogs', upload.fields([
     { name: 'cover_image', maxCount: 1 },
@@ -1423,6 +1442,10 @@ app.post('/blogs', upload.fields([
             .select();
 
         if (error) return res.status(400).json({ error: error.message });
+
+        // Panggil fungsi webhook setelah berhasil membuat blog
+        await triggerAstroBuild();
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1485,6 +1508,10 @@ app.put('/blogs/:id', upload.fields([
 
         const { data, error } = await supabase.from('blogs').update(updateData).eq('id', id).select();
         if (error) return res.status(400).json({ error: error.message });
+
+        // Panggil fungsi webhook setelah berhasil memperbarui blog
+        await triggerAstroBuild();
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
