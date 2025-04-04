@@ -1451,7 +1451,7 @@ app.put('/blogs/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned } = req.body;
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned, image_list_url } = req.body; // Tambahkan image_list_url
 
         let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned };
 
@@ -1462,6 +1462,17 @@ app.put('/blogs/:id', upload.fields([
         }
 
         let image_list = [];
+
+        // Tambahkan URL gambar yang sudah ada dari frontend
+        if (image_list_url) {
+            if (Array.isArray(image_list_url)) {
+                image_list = image_list.concat(image_list_url);
+            } else {
+                image_list.push(image_list_url);
+            }
+        }
+
+        // Tambahkan URL gambar baru yang diunggah
         if (req.files['image_list']) {
             for (const file of req.files['image_list']) {
                 const imgPath = `images/${Date.now()}${path.extname(file.originalname)}`;
@@ -1469,6 +1480,7 @@ app.put('/blogs/:id', upload.fields([
                 if (imgUrl) image_list.push(imgUrl);
             }
         }
+
         if (image_list.length > 0) updateData.image_list = image_list;
 
         const { data, error } = await supabase.from('blogs').update(updateData).eq('id', id).select();
@@ -1541,42 +1553,33 @@ app.get('/contacts/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a blog entry (with image uploads)
-app.put('/blogs/:id', upload.fields([
-    { name: 'cover_image', maxCount: 1 },
-    { name: 'image_list', maxCount: 10 }
-]), async (req, res) => {
+// Update a contact (with image upload)
+app.put('/contacts/:id', upload.single('contact_image'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned } = req.body;
+        const { contact_title, contact_subtitle } = req.body;
 
-        let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned };
+        let updateData = { contact_title, contact_subtitle };
 
-        if (req.files['cover_image']) {
-            const coverImgFile = req.files['cover_image'][0];
-            const coverImgPath = `cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
-            updateData.cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
-        }
-
-        let image_list = [];
-        if (req.files['image_list']) {
-            for (const file of req.files['image_list']) {
-                const imgPath = `images/${Date.now()}${path.extname(file.originalname)}`;
-                const imgUrl = await uploadBlogsToSupabase(file, imgPath);
-                if (imgUrl) image_list.push(imgUrl);
+        if (req.file) {
+            const filePath = `${Date.now()}${path.extname(req.file.originalname)}`;
+            const contact_image = await uploadFileToSupabase(req.file, filePath);
+            if (!contact_image) {
+                return res.status(500).json({ error: 'Failed to upload image' });
             }
+            updateData.contact_image = contact_image;
         }
 
-        // Handle existing image URLs
-        if (req.body.image_list_url) {
-            const existingUrls = Array.isArray(req.body.image_list_url) ? req.body.image_list_url : [req.body.image_list_url];
-            image_list = [...existingUrls, ...image_list];
+        const { data, error } = await supabase
+            .from('contact')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
         }
 
-        if (image_list.length > 0) updateData.image_list = image_list;
-
-        const { data, error } = await supabase.from('blogs').update(updateData).eq('id', id).select();
-        if (error) return res.status(400).json({ error: error.message });
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
