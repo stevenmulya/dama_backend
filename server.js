@@ -1392,7 +1392,7 @@ app.delete('/work_page/:id', async (req, res) => {
 
 // --------------------- BLOGS CRUD ---------------------
 
-// Create a blog entry
+// Create a blog entry (with image uploads)
 app.post('/blogs', upload.fields([
     { name: 'cover_image', maxCount: 1 },
     { name: 'image_list', maxCount: 10 }
@@ -1444,40 +1444,24 @@ app.get('/blogs/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a blog entry
+// Update a blog entry (with image uploads)
 app.put('/blogs/:id', upload.fields([
     { name: 'cover_image', maxCount: 1 },
     { name: 'image_list', maxCount: 10 }
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const {
-            title, slug, content, excerpt,
-            author_name, author_contact, published_at,
-            is_published, is_pinned,
-            existing_images // <= JSON string dari frontend
-        } = req.body;
+        const { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned } = req.body;
 
-        let updateData = {
-            title, slug, content, excerpt,
-            author_name, author_contact, published_at,
-            is_published, is_pinned
-        };
+        let updateData = { title, slug, content, excerpt, author_name, author_contact, published_at, is_published, is_pinned };
 
-        // Cover image update
         if (req.files['cover_image']) {
             const coverImgFile = req.files['cover_image'][0];
             const coverImgPath = `cover/${Date.now()}${path.extname(coverImgFile.originalname)}`;
             updateData.cover_image = await uploadBlogsToSupabase(coverImgFile, coverImgPath);
         }
 
-        // Get old image list
         let image_list = [];
-        if (existing_images) {
-            image_list = JSON.parse(existing_images); // e.g. ["url1", "url2"]
-        }
-
-        // Append new uploaded images
         if (req.files['image_list']) {
             for (const file of req.files['image_list']) {
                 const imgPath = `images/${Date.now()}${path.extname(file.originalname)}`;
@@ -1485,15 +1469,9 @@ app.put('/blogs/:id', upload.fields([
                 if (imgUrl) image_list.push(imgUrl);
             }
         }
+        if (image_list.length > 0) updateData.image_list = image_list;
 
-        updateData.image_list = image_list;
-
-        const { data, error } = await supabase
-            .from('blogs')
-            .update(updateData)
-            .eq('id', id)
-            .select();
-
+        const { data, error } = await supabase.from('blogs').update(updateData).eq('id', id).select();
         if (error) return res.status(400).json({ error: error.message });
         res.json(data);
     } catch (error) {
