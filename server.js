@@ -1,10 +1,10 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
-const multer = require('multer');
-const path = require('path');
-const fetch = require('node-fetch');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import { createClient } from '@supabase/supabase-js';
+import multer from 'multer';
+import path from 'path';
+import fetch from 'node-fetch';
 
 
 const app = express();
