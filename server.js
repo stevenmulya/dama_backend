@@ -1237,6 +1237,10 @@ app.post('/works', upload.fields([
             .select();
 
         if (error) return res.status(400).json({ error: error.message });
+
+        // Trigger Astro build after successfully creating a work entry
+        await triggerAstroBuild();
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1266,7 +1270,7 @@ app.put('/works/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category } = req.body;
+        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category, work_img_url } = req.body; // Tambahkan work_img_url
 
         if (!VALID_WORK_CATEGORIES.includes(work_category)) {
             return res.status(400).json({ error: "Invalid work_category value" });
@@ -1287,6 +1291,17 @@ app.put('/works/:id', upload.fields([
         }
 
         let work_img = [];
+
+        // Tambahkan URL gambar yang sudah ada dari frontend
+        if (work_img_url) {
+            if (Array.isArray(work_img_url)) {
+                work_img = work_img.concat(work_img_url);
+            } else {
+                work_img.push(work_img_url);
+            }
+        }
+
+        // Tambahkan URL gambar baru yang diunggah
         if (req.files['work_img']) {
             for (const file of req.files['work_img']) {
                 const imgPath = `works/images/${Date.now()}${path.extname(file.originalname)}`;
@@ -1294,10 +1309,15 @@ app.put('/works/:id', upload.fields([
                 if (imgUrl) work_img.push(imgUrl);
             }
         }
+
         if (work_img.length > 0) updateData.work_img = work_img;
 
         const { data, error } = await supabase.from('works').update(updateData).eq('id', id).select();
         if (error) return res.status(400).json({ error: error.message });
+
+        // Trigger Astro build after successfully updating a work entry
+        await triggerAstroBuild();
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1309,6 +1329,10 @@ app.delete('/works/:id', async (req, res) => {
     const { id } = req.params;
     const { error } = await supabase.from('works').delete().eq('id', id);
     if (error) return res.status(400).json({ error: error.message });
+
+    // Optional: Trigger Astro build after deleting a work entry
+    // await triggerAstroBuild();
+
     res.json({ message: 'Work deleted successfully' });
 });
 
