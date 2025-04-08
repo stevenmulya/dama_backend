@@ -433,14 +433,43 @@ app.delete('/ourclients/:id', async (req, res) => {
 
 // --------------------- TOWORKS CRUD ---------------------
 
-// Create a towork
-app.post('/toworks', async (req, res) => {
+// Create a towork (with multiple image uploads)
+app.post('/toworks', upload.fields([
+    { name: 'one_img', maxCount: 1 },
+    { name: 'two_img', maxCount: 1 },
+    { name: 'three_img', maxCount: 1 },
+]), async (req, res) => {
     try {
-        const { toworks_text, toworks_sub_text } = req.body;
+        const { toworks_text, toworks_sub_text, one_name, one_link, two_name, two_link, three_name, three_link } = req.body;
+
+        const uploadedImages = {};
+        for (const field of ['one_img', 'two_img', 'three_img']) {
+            if (req.files && req.files[field] && req.files[field][0]) {
+                const file = req.files[field][0];
+                const filePath = `toworks/${Date.now()}-${field}${path.extname(file.originalname)}`;
+                const imageUrl = await uploadFileToSupabase(file, filePath);
+                if (!imageUrl) {
+                    return res.status(500).json({ error: `Failed to upload ${field}` });
+                }
+                uploadedImages[field] = imageUrl;
+            }
+        }
 
         const { data, error } = await supabase
             .from('toworks')
-            .insert([{ toworks_text, toworks_sub_text }])
+            .insert([{
+                toworks_text,
+                toworks_sub_text,
+                one_img: uploadedImages.one_img || null,
+                one_name: one_name || null,
+                one_link: one_link || null,
+                two_img: uploadedImages.two_img || null,
+                two_name: two_name || null,
+                two_link: two_link || null,
+                three_img: uploadedImages.three_img || null,
+                three_name: three_name || null,
+                three_link: three_link || null,
+            }])
             .select();
 
         if (error) {
@@ -476,15 +505,34 @@ app.get('/toworks/:id', async (req, res) => {
     res.json(data);
 });
 
-// Update a towork
-app.put('/toworks/:id', async (req, res) => {
+// Update a towork (with optional image updates)
+app.put('/toworks/:id', upload.fields([
+    { name: 'one_img', maxCount: 1 },
+    { name: 'two_img', maxCount: 1 },
+    { name: 'three_img', maxCount: 1 },
+]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { toworks_text, toworks_sub_text } = req.body;
+        const { toworks_text, toworks_sub_text, one_name, one_link, two_name, two_link, three_name, three_link } = req.body;
+
+        const updateData = { toworks_text, toworks_sub_text, one_name, one_link, two_name, two_link, three_name, three_link };
+        const uploadedImages = {};
+
+        for (const field of ['one_img', 'two_img', 'three_img']) {
+            if (req.files && req.files[field] && req.files[field][0]) {
+                const file = req.files[field][0];
+                const filePath = `toworks/${Date.now()}-${field}${path.extname(file.originalname)}`;
+                const imageUrl = await uploadFileToSupabase(file, filePath);
+                if (!imageUrl) {
+                    return res.status(500).json({ error: `Failed to upload new ${field}` });
+                }
+                updateData[field] = imageUrl;
+            }
+        }
 
         const { data, error } = await supabase
             .from('toworks')
-            .update({ toworks_text, toworks_sub_text })
+            .update(updateData)
             .eq('id', id)
             .select();
 
