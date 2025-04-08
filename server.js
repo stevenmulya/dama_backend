@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import path from 'path';
 import fetch from 'node-fetch';
+import DOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
 
 
 const app = express();
@@ -15,6 +17,10 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const storage = supabase.storage;
+
+// Inisialisasi DOMPurify dengan JSDOM
+const window = new JSDOM('').window;
+const purify = DOMPurify(window);
 
 // Middleware
 app.use(cors({ origin: '*' }));
@@ -1255,6 +1261,12 @@ app.post('/works', upload.fields([
             return res.status(400).json({ error: "Invalid work_category value" });
         }
 
+        const work_desc_sanitized = purify.sanitize(work_desc);
+        const work_detail_sanitized = purify.sanitize(work_detail);
+        const work_people_sanitized = purify.sanitize(work_people);
+        const work_title_sanitized = purify.sanitize(work_title);
+        const work_subtitle_sanitized = purify.sanitize(work_subtitle);
+
         let work_main_img = null;
         let work_logo_img = null;
         let work_img = [];
@@ -1281,12 +1293,21 @@ app.post('/works', upload.fields([
 
         const { data, error } = await supabase
             .from('works')
-            .insert([{ work_title, work_subtitle, work_desc, work_detail, work_people, work_category, work_img, work_main_img, work_logo_img }])
+            .insert([{
+                work_title: work_title_sanitized,
+                work_subtitle: work_subtitle_sanitized,
+                work_desc: work_desc_sanitized,
+                work_detail: work_detail_sanitized,
+                work_people: work_people_sanitized,
+                work_category,
+                work_img,
+                work_main_img,
+                work_logo_img
+            }])
             .select();
 
         if (error) return res.status(400).json({ error: error.message });
 
-        // Trigger Astro build after successfully creating a work entry
         await triggerAstroBuild();
 
         res.json(data);
@@ -1318,13 +1339,26 @@ app.put('/works/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category, work_img_url } = req.body; // Tambahkan work_img_url
+        const { work_title, work_subtitle, work_desc, work_detail, work_people, work_category, work_img_url } = req.body;
 
         if (!VALID_WORK_CATEGORIES.includes(work_category)) {
             return res.status(400).json({ error: "Invalid work_category value" });
         }
 
-        let updateData = { work_title, work_subtitle, work_desc, work_detail, work_people, work_category };
+        const work_desc_sanitized = purify.sanitize(work_desc);
+        const work_detail_sanitized = purify.sanitize(work_detail);
+        const work_people_sanitized = purify.sanitize(work_people);
+        const work_title_sanitized = purify.sanitize(work_title);
+        const work_subtitle_sanitized = purify.sanitize(work_subtitle);
+
+        let updateData = {
+            work_title: work_title_sanitized,
+            work_subtitle: work_subtitle_sanitized,
+            work_desc: work_desc_sanitized,
+            work_detail: work_detail_sanitized,
+            work_people: work_people_sanitized,
+            work_category
+        };
 
         if (req.files['work_main_img']) {
             const mainImgFile = req.files['work_main_img'][0];
@@ -1339,17 +1373,10 @@ app.put('/works/:id', upload.fields([
         }
 
         let work_img = [];
-
-        // Tambahkan URL gambar yang sudah ada dari frontend
         if (work_img_url) {
-            if (Array.isArray(work_img_url)) {
-                work_img = work_img.concat(work_img_url);
-            } else {
-                work_img.push(work_img_url);
-            }
+            work_img = Array.isArray(work_img_url) ? work_img_url : [work_img_url];
         }
 
-        // Tambahkan URL gambar baru yang diunggah
         if (req.files['work_img']) {
             for (const file of req.files['work_img']) {
                 const imgPath = `works/images/${Date.now()}${path.extname(file.originalname)}`;
@@ -1363,7 +1390,6 @@ app.put('/works/:id', upload.fields([
         const { data, error } = await supabase.from('works').update(updateData).eq('id', id).select();
         if (error) return res.status(400).json({ error: error.message });
 
-        // Trigger Astro build after successfully updating a work entry
         await triggerAstroBuild();
 
         res.json(data);
@@ -1379,7 +1405,7 @@ app.delete('/works/:id', async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     // Optional: Trigger Astro build after deleting a work entry
-    // await triggerAstroBuild();
+    await triggerAstroBuild();
 
     res.json({ message: 'Work deleted successfully' });
 });
